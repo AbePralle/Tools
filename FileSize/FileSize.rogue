@@ -1,0 +1,141 @@
+local filenames = Set<<String>>()
+if (System.command_line_arguments.count)
+  collect_filenames( forEach in System.command_line_arguments, filenames )
+else
+  collect_filenames( "*", filenames )
+endIf
+
+
+local total_size : Int64
+
+local output = OutputTable()
+total_size += sum_sizes( forEach in filenames, output )
+
+output.display
+println "Total: $ bytes" (total_size)
+
+
+routine collect_filenames( filepath:String, filenames:Set<<String>> )
+  local buffer = StringBuilder()
+  local parts = filepath.split( '/' )
+  while (parts.count)
+    if (parts.first.contains('*') or parts.first.contains('?')) escapeWhile
+    buffer.print( parts.remove_first )
+    buffer.print( '/' )
+  endWhile
+  local path = buffer->String
+  if (path.count == 0) path = "."
+
+  local pattern : String
+  local is_recursive = false
+  if (parts.count)
+    pattern = parts.join( '/' )
+    is_recursive = pattern.contains( "**" )
+  endIf
+
+  local total_size : Int64
+  forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
+    if (pattern and not filename.matches_wildcard_pattern(pattern)) nextIteration
+    filenames.add( filename )
+  endForEach
+
+endRoutine
+
+
+routine sum_sizes( filepath:String, output:OutputTable )->Int64
+  output.column = 0
+  output.print( filepath )
+
+  local size_sum : Int64
+  if (File.is_folder(filepath))
+    forEach (filename in File.listing(filepath,&ignore_hidden,&recursive))
+      if (not File.is_folder(filename))
+        size_sum += File.size( filename )
+      endIf
+    endForEach
+  else
+    size_sum += File.size( filepath )
+  endIf
+
+  output.column = 1
+  output.print( size_sum )
+
+  return size_sum
+endRoutine
+
+
+class OutputTable : PrintWriter<<buffer>>
+  PROPERTIES
+    buffer     = StringBuilder()
+    columns    = String[][]
+    column     : Int32
+
+  METHODS
+    method display
+      flush
+
+      if (columns.count == 0) return
+
+      if (columns.count == 1)
+        Global.println (forEach in columns.first)
+
+      else
+        local left_max = 0
+        left_max = left_max.or_larger( (forEach in columns[0]).count )
+
+        local same_line = true
+        forEach (line in 0..<columns.first.count)
+          local right = columns[1][line]
+          if (not right) right = ""
+          if (left_max + 6 + right.count >= Console.width)
+            same_line = false
+            escapeForEach
+          endIf
+        endForEach
+
+        local every_other = true
+        forEach (line in 0..<columns.first.count)
+          local left = columns[0][line]
+          local right = columns[1][line]
+          local spaces = (left_max + 5) - left.count
+          Global.print left
+          if (right.count)
+            if (same_line)
+              Global.print ' '
+              if (every_other)
+                loop (spaces) Global.print '.'
+              else
+                loop (spaces) Global.print ' '
+              endIf
+              every_other = not every_other
+              Global.print ' '
+              Global.print right
+            else
+              Global.println
+              if (right)
+                Global.print "  "
+                Global.print right
+              endIf
+            endIf
+          else
+            every_other = true
+          endIf
+          Global.println
+
+        endForEach
+
+      endIf
+
+    method set_column( new_column:Int32 )->this
+      if (column != new_column)
+        flush
+        @column = new_column
+      endIf
+      return this
+
+    method write( builder:StringBuilder )->this
+      columns.expand_to_include( column )
+      ensure columns[ column ]
+      columns[ column ].add( builder->String )
+      return this
+endClass
