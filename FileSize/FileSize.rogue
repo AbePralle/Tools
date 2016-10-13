@@ -24,7 +24,9 @@ routine collect_filenames( filepath:String, filenames:Set<<String>> )
     buffer.print( '/' )
   endWhile
   local path = buffer->String
+
   if (path.count == 0) path = "."
+  else                 path = path.before_last( '/' )
 
   local pattern : String
   local is_recursive = false
@@ -36,7 +38,9 @@ routine collect_filenames( filepath:String, filenames:Set<<String>> )
   local total_size : Int64
   forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
     if (pattern and not filename.matches_wildcard_pattern(pattern)) nextIteration
-    filenames.add( filename )
+    local fname = filename.after_prefix( "./" )
+    if (fname.ends_with('/')) fname = fname.leftmost(-1)
+    filenames.add( fname )
   endForEach
 
 endRoutine
