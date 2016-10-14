@@ -35,13 +35,16 @@ routine collect_filenames( filepath:String, filenames:Set<<String>> )
     is_recursive = pattern.contains( "**" )
   endIf
 
-  local total_size : Int64
-  forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
-    if (pattern and not filename.matches_wildcard_pattern(pattern)) nextIteration
-    local fname = filename.after_prefix( "./" )
-    if (fname.ends_with('/')) fname = fname.leftmost(-1)
-    filenames.add( fname )
-  endForEach
+  if (File.is_folder(path))
+    forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
+      if (pattern and not filename.matches_wildcard_pattern(pattern)) nextIteration
+      local fname = filename.after_prefix( "./" )
+      if (fname.ends_with('/')) fname = fname.leftmost(-1)
+      filenames.add( fname )
+    endForEach
+  else
+    filenames.add( path )
+  endIf
 
 endRoutine
 
