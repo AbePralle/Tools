@@ -12,7 +12,7 @@ local output = OutputTable()
 total_size += sum_sizes( forEach in filenames, output )
 
 output.display
-println "Total: $ bytes" (total_size)
+println "Total: $ bytes" (total_size.format(",15"))
 
 
 routine collect_filenames( filepath:String, filenames:Set<<String>> )
@@ -37,7 +37,7 @@ routine collect_filenames( filepath:String, filenames:Set<<String>> )
 
   if (File.is_folder(path))
     forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
-      if (pattern and not filename.matches_wildcard_pattern(pattern)) nextIteration
+      if (pattern and not File.matches_wildcard_pattern(filename,pattern)) nextIteration
       local fname = filename.after_prefix( "./" )
       if (fname.ends_with('/')) fname = fname.leftmost(-1)
       filenames.add( fname )
@@ -65,7 +65,7 @@ routine sum_sizes( filepath:String, output:OutputTable )->Int64
   endIf
 
   output.column = 1
-  output.print( size_sum )
+  output.print( size_sum.format(",15") )
 
   return size_sum
 endRoutine
