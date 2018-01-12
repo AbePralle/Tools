@@ -5,3 +5,7 @@ Build/fs: FileSize.rogue Makefile
 	cp Build/fs /usr/local/bin/fs
 	chmod u+x /usr/local/bin/fs
 
+remake: touch_source Build/fs
+
+touch_source:
+	touch FileSize.rogue

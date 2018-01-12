@@ -12,7 +12,7 @@ local output = OutputTable()
 total_size += sum_sizes( forEach in filenames, output )
 
 output.display
-println "Total: $ bytes" (total_size.format(",15"))
+println "Total: $ bytes" (total_size.format(","))
 
 
 routine collect_filenames( filepath:String, filenames:Set<<String>> )
