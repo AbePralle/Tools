@@ -12,7 +12,7 @@ Lists the recursive size of each item in the given filepaths. Also useful as a w
 
 ### Wildcards
 
----------|--------
+         |
 Wildcard | Meaning
 ---------|--------
 ?        | Match a single character
