@@ -114,9 +114,21 @@ class OutputTable : PrintWriter<<buffer>>
               else
                 loop (spaces) Global.print ' '
               endIf
+              if (every_other)
+                local temp = right
+                while (temp.count and temp[0] == ' ')
+                  temp = temp.rightmost(-1)
+                  Global.print '.'
+                endWhile
+                Global.print ' '
+                Global.print temp
+              else
+                Global.print ' '
+                Global.print right
+              endIf
+
               every_other = not every_other
-              Global.print ' '
-              Global.print right
+
             else
               Global.println
               if (right)
