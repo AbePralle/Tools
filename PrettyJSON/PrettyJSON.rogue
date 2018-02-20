@@ -1,0 +1,7 @@
+local buffer = StringBuilder()
+while (Console.has_another)
+  local ch = Console.read
+  buffer.print( ch )
+endWhile
+
+println JSON.parse( buffer->String ).to_json( &formatted )

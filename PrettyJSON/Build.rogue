@@ -1,0 +1,70 @@
+#$ ROGUEC_ARGS = --api
+
+routine rogo_default
+  rogo_build
+endRoutine
+
+routine rogo_build
+  File.create_folder( "Build" )
+  rogo_run @|roguec PrettyJSON.rogue --main --output=Build
+  rogo_run @|(cd build && g++ -o prettyjson PrettyJSON.cpp)
+  rogo_run @|cp Build/prettyjson /usr/local/bin/prettyjson
+  rogo_run @|chmod u+x /usr/local/bin/prettyjson
+endRoutine
+
+routine rogo_clean
+  rogo_run( "rm -rf Build" )
+  rogo_run( "rm -rf .rogo" )
+endRoutine
+
+routine rogo_run( command:String )
+  println "> " + command
+  System.run( command )
+endRoutine
+
+routine rogo_help
+  println "USAGE"
+  local lines = String[]
+  forEach (m in <<Global>>.methods)
+    if (m.name.begins_with(method_prefix))
+      local line = "  rogo $" (m.name.after_first(method_prefix))
+      line += " <$>" (m.parameter_name(forEach in 0..<m.parameter_count))
+      lines.add( line )
+    endIf
+  endForEach
+  lines.sort( (a,b)=>(a<b) )
+  println (forEach in lines)
+endRoutine
+
+
+#------------------------------------------------------------------------------
+# Process command line arguments and invoke appropriate function
+#------------------------------------------------------------------------------
+global method_prefix = ?:{ $moduleName.count:$moduleName "::" || "" } + "rogo_" : String
+
+local args = @[]
+args.add( forEach in System.command_line_arguments )
+
+if (args.count)
+  run( args.remove_first, args )
+else
+  rogo_default
+endIf
+
+routine run( cmd:String, args:Value )
+  try
+    local m = <<Global>>.find_method( method_prefix + cmd )
+    if (m)
+      if (m.parameter_count == 1 and args.count > 1)
+        # Wrap all args in a ValueList.
+        args = @[ args ]
+      endIf
+      m.call( Global, args )
+    else
+      rogo_help
+    endIf
+  catch (err:Error)
+    rogo_help
+  endTry
+endRoutine
+
