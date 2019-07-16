@@ -1,7 +1,15 @@
 # Tools
-Miscellanous tools
+Miscellanous tools. To install a tool in `/usr/local/bin`, `cd` to a subfolder and run `rogo`.
 
-## FileSize - fs
+## days
+### Usage
+    days yyyy.mm.dd
+      Prints number of days since the given date.
+
+    days yyyy.mm.dd yyyy.mm.dd
+      Prints number of days between two dates.
+
+## fs (File Size)
 
 ### Usage
 

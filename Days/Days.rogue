@@ -1,0 +1,19 @@
+local args = System.command_line_arguments
+if (args.count == 0 or args.count > 2)
+  println @|USAGE
+           |  days yyyy.mm.dd
+           |    Prints number of days since the given date.
+           |
+           |  days yyyy.mm.dd yyyy.mm.dd
+           |    Prints number of days between two dates.
+           |
+  System.exit 1
+endIf
+
+local from = Date( args.first )
+local to = select{ args.count==2:Date(args.last) || Date.now }
+if (from > to) swapValues( from, to )
+local days = ((((to - from).total_seconds / (60*60*24)) + 0.5).floor)->Int32
+println "# day".pluralized( days )
+println "($, $)" ("# week".pluralized(days/7),"# day".pluralized(days%7))
+
