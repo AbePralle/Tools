@@ -13,7 +13,14 @@ endIf
 local from = Date( args.first )
 local to = select{ args.count==2:Date(args.last) || Date.now }
 if (from > to) swapValues( from, to )
-local days = ((((to - from).total_seconds / (60*60*24)) + 0.5).floor)->Int32
-println "# day".pluralized( days )
-println "($, $)" ("# week".pluralized(days/7),"# day".pluralized(days%7))
+local interval = (to - from)
+println interval
+local days = interval.days
+println "$, $" ("# week".pluralized(days/7),"# day".pluralized(days%7))
+
+println "$ years" ((days/365.0).format(".2"))
+local y = (days/365)->Int32
+print "# year".pluralized( y )
+local m = ((days - y*365.0) / 365) * 12
+println ", $ months" (m.format(".2"))
 
