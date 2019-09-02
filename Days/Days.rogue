@@ -1,17 +1,38 @@
-local args = System.command_line_arguments
+local args = System.command_line_arguments.cloned
+if (args.count == 3)
+  args.clear.[ add(args.join(' ')) ]
+elseIf (args.count == 6)
+  local a = args.subset(0,3).join(' ')
+  local b = args.subset(3,3).join(' ')
+  args.clear.[ add(a), add(b) ]
+endIf
+
 if (args.count == 0 or args.count > 2)
   println @|USAGE
-           |  days yyyy.mm.dd
+           |  days <date>
            |    Prints number of days since the given date.
            |
-           |  days yyyy.mm.dd yyyy.mm.dd
+           |  days <date> <date>
            |    Prints number of days between two dates.
+           |
+           |SUPPORTED DATE FORMATS
+           |  2018-10-27T10:49
+           |  Sat Oct 27 10:46:30 PDT 2018
+           |  2018.10.27 11:18:00[.000][AM]
+           |  2018.10.27
+           |  2018-10-27
+           |  2018/10/27
+           |  August 29, 2019
+           |  August 29 2019
+           |  29 August, 2019
+           |  29 August 2019
            |
   System.exit 1
 endIf
 
 local from = Date( args.first )
 local to = select{ args.count==2:Date(args.last) || Date.now }
+
 if (from > to) swapValues( from, to )
 local interval = (to - from)
 println interval
