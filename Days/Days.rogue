@@ -1,6 +1,7 @@
 local args = System.command_line_arguments.cloned
 if (args.count == 3)
-  args.clear.[ add(args.join(' ')) ]
+  local date = args.join( ' ' )
+  args.clear.[ add(date) ]
 elseIf (args.count == 6)
   local a = args.subset(0,3).join(' ')
   local b = args.subset(3,3).join(' ')
