@@ -5,6 +5,11 @@ else
   collect_filenames( "*", filenames )
 endIf
 
+local list = String[]
+list.add( forEach in filenames )
+list.sort( (a,b) => a.compare_to(b,&ignore_case) <= 0 )
+filenames.clear
+filenames.add( forEach in list )
 
 local total_size : Int64
 
@@ -36,7 +41,7 @@ routine collect_filenames( filepath:String, filenames:Set<<String>> )
   endIf
 
   if (File.is_folder(path))
-    forEach (filename in File.listing(path,&ignore_hidden,&recursive=is_recursive))
+    forEach (filename in File.listing(path,?:{is_recursive:"**"||"*"},&ignore_hidden))
       if (pattern and not File.matches_wildcard_pattern(filename,pattern)) nextIteration
       local fname = filename.after_prefix( "./" )
       if (fname.ends_with('/')) fname = fname.leftmost(-1)
@@ -55,7 +60,7 @@ routine sum_sizes( filepath:String, output:OutputTable )->Int64
 
   local size_sum : Int64
   if (File.is_folder(filepath))
-    forEach (filename in File.listing(filepath,&ignore_hidden,&recursive))
+    forEach (filename in File.listing(filepath,"**",&ignore_hidden))
       if (not File.is_folder(filename))
         size_sum += File.size( filename )
       endIf
