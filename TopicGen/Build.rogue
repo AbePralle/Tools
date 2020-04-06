@@ -119,14 +119,14 @@ routine rogo_topics
     builder.println @|</body>
                      |</html>
 
-    File.save( "Topics.html", builder->String )
+    File.save( "Temp.html", builder->String )
     if (execute("node TopicGen.js"))
       local bmp = Bitmap( File("GeneratedImages/Rendered.png") )
 
       local excess = 1080 - ((111 * topics.count) + 9)
       bmp.crop( 0, 0, 0, excess )
-      local padded = Bitmap( 370, 1080 )
-      bmp.blit( padded, 0, excess/2 )
+      local padded = Bitmap( 1920, 1080 )
+      bmp.blit( padded, (1920-370), excess/2 )
 
       local filepath = "GeneratedImages/$.png" (active+1)
       println "  $ - $" (filepath,topics[active])
@@ -134,6 +134,8 @@ routine rogo_topics
     endIf
   endForEach
   File.delete( "GeneratedImages/Rendered.png" )
+  File.delete( "Topics.html" ) # old temp filename
+  File.delete( "Temp.html" )   # new temp filename
 
 endRoutine
 
