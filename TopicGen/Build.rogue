@@ -64,7 +64,46 @@ routine rogo_topics
 
   File.delete( "GeneratedImages" )
   File.create_folder( "GeneratedImages" )
+
+  block
+    File.save( "Temp.html", generate_title_topics(topics) )
+    if (execute("node TopicGen.js 480"))
+      local bmp = Bitmap( File("GeneratedImages/Rendered.png") )
+
+      local padded = Bitmap( 1920, 1080 )
+      bmp.fill( Box(1920-480,0,480,1080), Color.WHITE )
+      bmp.blit( padded, (1920-480), 0 )
+
+      local filepath = "GeneratedImages/TitleTopics.png"
+      println "  $" (filepath)
+      padded.save_as_png( File(filepath) )
+    endIf
+  endBlock
+
   forEach (active of topics)
+    File.save( "Temp.html", generate_topics(topics,active) )
+
+    if (execute("node TopicGen.js 350"))
+      local bmp = Bitmap( File("GeneratedImages/Rendered.png") )
+
+      local excess = 1080 - ((111 * topics.count) + 9)
+      bmp.crop( 0, 0, 0, excess )
+      local padded = Bitmap( 1920, 1080 )
+      bmp.blit( padded, (1920-370), excess/2 )
+
+      local filepath = "GeneratedImages/$.png" (active+1)
+      println "  $ - $" (filepath,topics[active])
+      padded.save_as_png( File(filepath) )
+    endIf
+  endForEach
+  File.delete( "GeneratedImages/Rendered.png" )
+  File.delete( "Topics.html" ) # old temp filename
+  #File.delete( "Temp.html" )   # new temp filename
+  execute "open GeneratedImages"
+
+endRoutine
+
+routine generate_topics( topics:String[], active:Int32 )->String
     local builder = StringBuilder()
 
     builder.println @|<html>
@@ -119,24 +158,60 @@ routine rogo_topics
     builder.println @|</body>
                      |</html>
 
-    File.save( "Temp.html", builder->String )
-    if (execute("node TopicGen.js"))
-      local bmp = Bitmap( File("GeneratedImages/Rendered.png") )
+    return builder->String
+endRoutine
 
-      local excess = 1080 - ((111 * topics.count) + 9)
-      bmp.crop( 0, 0, 0, excess )
-      local padded = Bitmap( 1920, 1080 )
-      bmp.blit( padded, (1920-370), excess/2 )
+routine generate_title_topics( topics:String[] )->String
+    local builder = StringBuilder()
 
-      local filepath = "GeneratedImages/$.png" (active+1)
-      println "  $ - $" (filepath,topics[active])
-      padded.save_as_png( File(filepath) )
-    endIf
-  endForEach
-  File.delete( "GeneratedImages/Rendered.png" )
-  File.delete( "Topics.html" ) # old temp filename
-  File.delete( "Temp.html" )   # new temp filename
+    local html = @|<html>
+                  |<head>
+                  |  <style type="text/css">
+                  |    body { background-color: black; margin: 0px auto; overflow: hidden; }
+                  |
+                  |    div {
+                  |        border: 12px solid black;
+                  |        float: none;
+                  |        color:white;
+                  |        font-family:arial;
+                  |        font-size:$(FONT_SIZE)px;
+                  |        width:  456px;
+                  |        height: $(CELL_HEIGHT)px;
+                  |        text-align: center;
+                  |        overflow:hidden;
+                  |        background:#07f;
+                  |    }
+                  |
+                  |    span
+                  |    {
+                  |      width: 456px;
+                  |      height: $(CELL_HEIGHT)px;
+                  |      display: table-cell;
+                  |      vertical-align: middle;
+                  |      text-align: center;
+                  |    }
+                  |
+                  |    div:nth-child(n+2) {
+                  |        margin-top: -12px;
+                  |    }
+                  |  </style>
+                  |</head>
+                  |<body>
 
+    html = html.replacing( "$(CELL_HEIGHT)", ""+((1080-(12*(topics.count+1))) / topics.count) )
+    local font_size = [ 80, 80, 80, 80, 60, 50, 50, 50, 50, 40, 40 ][ topics.count.clamped(0,10) ]
+    html = html.replacing( "$(FONT_SIZE)", ""+font_size )
+
+    builder.println( html )
+    builder.println( ''<div style="margin-top:0px;"><span>$</span></div>'' (topics.first) )
+    forEach (topic at index in topics from 1)
+      builder.println( ''<div><span>$</span></div>'' (topic) )
+    endForEach
+
+    builder.println @|</body>
+                     |</html>
+
+    return builder->String
 endRoutine
 
 routine execute( commands:String, &suppress_error )->Logical
