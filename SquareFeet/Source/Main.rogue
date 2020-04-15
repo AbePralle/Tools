@@ -1,0 +1,86 @@
+uses Plasmacore
+
+Display( "Main" ).screen = MainScreen
+
+class MainScreen : Screen [singleton]
+  PROPERTIES
+    floor_plan : Image
+    selection  : Box?
+    pixels_per_foot = 20.8
+
+  METHODS
+    method on_start
+      floor_plan = Image( "FloorPlan.png" )
+      floor_plan.scale_to_fit( Display.size )
+      selection = Box( Display.at(0.25,0.25), Display.size/4 )
+      change_state( IdleState() )
+
+    method on( e:KeyEvent )
+      if (e.is_press(Keycode.W))
+        pixels_per_foot += 0.1
+      elseIf (e.is_press(Keycode.S))
+        pixels_per_foot -= 0.1
+      endIf
+
+    method on( e:PointerEvent )
+
+    method on_draw
+      Display.clear( Color.BLACK )
+      floor_plan.draw( Display.center )
+      SystemFont.anchor = Anchor.TOP_LEFT
+      SystemFont.scale = Display.density
+      SystemFont.draw( pixels_per_foot.format(".1") + " Pixels/SF", Display.at(0,0) )
+
+      if (selection)
+        local box = selection.value
+        box.draw( Color.RED, Display.density*2 )
+        DefaultFont.scale = Display.density * 0.75
+        if (box.width > DefaultFont.height*2.5 and box.height > DefaultFont.height)
+          DefaultFont.anchor = Anchor.CENTER
+          DefaultFont.color = Color.RED
+          DefaultFont.draw( ((box.size / floor_plan.scale) / pixels_per_foot).product.format(".0") + " SF", box )
+        endIf
+      endIf
+
+    method on_resize
+      # Called when the Display.size changes
+
+    method on_update
+      # Called 60 times a second
+endClass
+
+
+class IdleState : ScreenState<<MainScreen>>
+  METHODS
+    method on( e:PointerEvent )
+      if (e.is_press)
+        if (screen.selection.exists and screen.selection.value.contains(e.position))
+          change_state( DragState() )
+        else
+          change_state( DrawSelectionState(e.position) )
+        endIf
+      endIf
+endClass
+
+
+class DragState : ScreenState<<MainScreen>>
+  METHODS
+    method on( e:PointerEvent )
+      if (e.is_move)
+        screen.selection = screen.selection.value + e.delta
+      elseIf (e.is_release)
+        change_state( IdleState() )
+      endIf
+endClass
+
+
+class DrawSelectionState( origin:XY ) : ScreenState<<MainScreen>>
+  METHODS
+    method on( e:PointerEvent )
+      if (e.is_move)
+        screen.selection = Box( origin.or_smaller(e.position), (origin-e.position).abs )
+      elseIf (e.is_release)
+        change_state( IdleState() )
+      endIf
+endClass
+

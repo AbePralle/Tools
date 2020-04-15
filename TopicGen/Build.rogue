@@ -130,7 +130,7 @@ routine generate_topics( topics:String[], active:Int32 )->String
                      |
                      |    div.active
                      |    {
-                     |      background:#07F;
+                     |      background:#04F;
                      |    }
                      |
                      |    span
@@ -179,7 +179,7 @@ routine generate_title_topics( topics:String[] )->String
                   |        height: $(CELL_HEIGHT)px;
                   |        text-align: center;
                   |        overflow:hidden;
-                  |        background:#07f;
+                  |        background:#04f;
                   |    }
                   |
                   |    span
