@@ -12,7 +12,6 @@ class MainScreen : Screen [singleton]
     method on_start
       floor_plan = Image( "FloorPlan.png" )
       floor_plan.scale_to_fit( Display.size )
-      selection = Box( Display.at(0.25,0.25), Display.size/4 )
       change_state( IdleState() )
 
     method on( e:KeyEvent )
@@ -20,6 +19,8 @@ class MainScreen : Screen [singleton]
         pixels_per_foot += 0.1
       elseIf (e.is_press(Keycode.S))
         pixels_per_foot -= 0.1
+      elseIf (e.is_press(Keycode.ESCAPE))
+        selection = null
       endIf
 
     method on( e:PointerEvent )
@@ -29,7 +30,7 @@ class MainScreen : Screen [singleton]
       floor_plan.draw( Display.center )
       SystemFont.anchor = Anchor.TOP_LEFT
       SystemFont.scale = Display.density
-      SystemFont.draw( pixels_per_foot.format(".1") + " Pixels/SF", Display.at(0,0) )
+      SystemFont.draw( pixels_per_foot.format(".1") + " Pixels/SF (W,S to change)", Display.at(0,0) )
 
       if (selection)
         local box = selection.value
