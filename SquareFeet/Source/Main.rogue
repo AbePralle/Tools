@@ -2,10 +2,36 @@ uses Plasmacore
 
 Display( "Main" ).screen = MainScreen
 
+class Area
+  PROPERTIES
+    bounds : Box
+
+  METHODS
+    method init( bounds )
+
+    method draw
+      bounds.draw( Color.RED, Display.density*2 )
+      DefaultFont.scale = Display.density * 0.75
+      if (bounds.width > DefaultFont.height*2.5 and bounds.height > DefaultFont.height)
+        DefaultFont.anchor = Anchor.CENTER
+        DefaultFont.color = Color.RED
+        DefaultFont.draw( ((bounds.size / MainScreen.floor_plan.scale) / MainScreen.pixels_per_foot).product.format(".0") + " SF", bounds )
+      endIf
+
+    method sf->Real64
+      return ((bounds.size / MainScreen.floor_plan.scale) / MainScreen.pixels_per_foot).product
+
+    method translate( offset:XY )
+      bounds += offset
+
+    method update( a:XY, b:XY )
+      bounds = Box( a.or_smaller(b), (b-a).abs )
+endClass
+
 class MainScreen : Screen [singleton]
   PROPERTIES
     floor_plan : Image
-    selection  : Box?
+    areas      = Area[]
     pixels_per_foot = 20.8
 
   METHODS
@@ -20,34 +46,30 @@ class MainScreen : Screen [singleton]
       elseIf (e.is_press(Keycode.S))
         pixels_per_foot -= 0.1
       elseIf (e.is_press(Keycode.ESCAPE))
-        selection = null
+        areas.clear
       endIf
-
-    method on( e:PointerEvent )
 
     method on_draw
       Display.clear( Color.BLACK )
       floor_plan.draw( Display.center )
+
+      local sf = 0
+      sf += ((forEach in areas).sf + 0.5).floor
       SystemFont.anchor = Anchor.TOP_LEFT
       SystemFont.scale = Display.density
-      SystemFont.draw( pixels_per_foot.format(".1") + " Pixels/SF (W,S to change)", Display.at(0,0) )
+      SystemFont.draw( "$ Pixels/SF (W,S to change)" (pixels_per_foot.format(".1")), Display.at(0,0) )
 
-      if (selection)
-        local box = selection.value
-        box.draw( Color.RED, Display.density*2 )
-        DefaultFont.scale = Display.density * 0.75
-        if (box.width > DefaultFont.height*2.5 and box.height > DefaultFont.height)
-          DefaultFont.anchor = Anchor.CENTER
-          DefaultFont.color = Color.RED
-          DefaultFont.draw( ((box.size / floor_plan.scale) / pixels_per_foot).product.format(".0") + " SF", box )
-        endIf
-      endIf
+      DefaultFont.scale = Display.density * 0.75
+      DefaultFont.anchor = Anchor.CENTER
+      DefaultFont.color = Color.RED
+      local h = DefaultFont.height
 
-    method on_resize
-      # Called when the Display.size changes
+      local status_bounds = Box( 0, Display.height-(h+16), Display.width, h+16 )
+      local mesg = "$ Total SF" (sf)
+      status_bounds.fill( Color.WHITE )
+      DefaultFont.draw( mesg, status_bounds )
 
-    method on_update
-      # Called 60 times a second
+      (forEach in areas).draw
 endClass
 
 
@@ -55,31 +77,44 @@ class IdleState : ScreenState<<MainScreen>>
   METHODS
     method on( e:PointerEvent )
       if (e.is_press)
-        if (screen.selection.exists and screen.selection.value.contains(e.position))
-          change_state( DragState() )
+        local cur = screen.areas.find( $.bounds.contains(e.position) )
+        if (cur)
+          change_state( DragState(cur.value) )
         else
-          change_state( DrawSelectionState(e.position) )
+          change_state( CreateAreaState(e.position) )
         endIf
       endIf
 endClass
 
 
-class DragState : ScreenState<<MainScreen>>
+class DragState( selection:Area ) : ScreenState<<MainScreen>>
+  PROPERTIES
+    is_moved = false
+
   METHODS
     method on( e:PointerEvent )
       if (e.is_move)
-        screen.selection = screen.selection.value + e.delta
+        is_moved = true
+        selection.translate( e.delta )
       elseIf (e.is_release)
+        if (not is_moved) screen.areas.remove( selection )
         change_state( IdleState() )
       endIf
 endClass
 
 
-class DrawSelectionState( origin:XY ) : ScreenState<<MainScreen>>
+class CreateAreaState( origin:XY ) : ScreenState<<MainScreen>>
+  PROPERTIES
+    selection : Area
+
   METHODS
+    method on_start
+      selection = Area( Box(origin,0,0) )
+      screen.areas.add( selection )
+
     method on( e:PointerEvent )
       if (e.is_move)
-        screen.selection = Box( origin.or_smaller(e.position), (origin-e.position).abs )
+        selection.update( origin, e.position )
       elseIf (e.is_release)
         change_state( IdleState() )
       endIf
