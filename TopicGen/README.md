@@ -7,5 +7,6 @@
 * Uses Rogo for driving the overall process.
 * Specialized for use in my Anecdotal Abe vlog but the tech can easily be adapted to other custom purposes.
 * Built for and only tested on macOS - Linux should work; Windows would need some extra work to link Build.rogue with LibPNG.
-* No configuration required - just run 'rogo topics' and it's easy to work out the rest.
+* Requires installation of [Rogue](https://github.com/AbePralle/Rogue).
+* No other configuration required - just run 'rogo topics' and it's easy to work out the rest.
 
