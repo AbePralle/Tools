@@ -1,0 +1,89 @@
+uses Bitmap
+
+U5MapGen()
+
+class U5MapGen
+  PROPERTIES
+    water_color : Color
+
+  METHODS
+    method init
+      local chunks = Bitmap( File("Assets/Reference.png") ).split( 16, 16 )
+      water_color = chunks.first.pixels.first
+
+      local land_count = 0
+      local columns = 0
+      forEach (chunk in chunks)
+        if (is_all_water(chunk)) print '~'
+        else                     print '#'; ++land_count
+        ++columns
+        if (columns == 16)
+          println
+          columns = 0
+        endIf
+      endForEach
+      println
+
+      @trace land_count
+
+      # Output:
+      #   ~~#############~
+      #   ~##############~
+      #   ###############~
+      #   ################
+      #   ################
+      #   ################
+      #   ###########~####
+      #   #######~~~##~###
+      #   ~######~~~##~###
+      #   #######~#~~~~##~
+      #   #######~#~~##~~~
+      #   ~~######~~~~~~##
+      #   ~##~####~~##~###
+      #   ~##~####~~##~###
+      #   ~###############
+      #   ~~~##~##########
+      #
+      #   land_count:205
+
+    method is_all_water( chunk:Bitmap )->Logical
+      forEach (pixel in chunk.pixels)
+        if (pixel != water_color) return false
+      endForEach
+      return true
+endClass
+
+#{
+class U5MapGen
+  METHODS
+    method init
+      local bitmap = Bitmap( 256, 256 )
+      local bytes = File.load_as_bytes( "assets/BRIT.DAT" )
+      trace bytes.count
+      local columns = 0
+      forEach (b in bytes from bytes.count-256)
+        print "$ " (b.to_hex_string)
+        ++columns
+        if (columns == 16)
+          println
+          columns = 0
+        endIf
+      endForEach
+      #{
+      local reader = File( "Assets/BRIT.DAT" ).reader
+      forEach (chunk_j in 0..15)
+        forEach (chunk_i in 0..15)
+          forEach (j in 0..15)
+            forEach (i in 0..15)
+              local pos = ((chunk_j*16+j) * 256) + (chunk_i*16) + i
+              if (reader.read != 1) bitmap.pixels[ pos ] = Color.WHITE
+            endForEach
+          endForEach
+        endForEach
+      endForEach
+      bitmap.resize( 512, 512 )
+      bitmap.save_as_png( File("U5Map.png") )
+      System.run( "open U5Map.png" )
+      }#
+endClass
+}#

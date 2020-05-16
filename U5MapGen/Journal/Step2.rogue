@@ -1,0 +1,23 @@
+uses Bitmap
+
+U5MapGen()
+
+class U5MapGen
+  METHODS
+    method init
+      local bitmap = Bitmap( 256, 256 )
+      local reader = File( "Assets/BRIT.DAT" ).reader
+      forEach (chunk_j in 0..15)
+        forEach (chunk_i in 0..15)
+          forEach (j in 0..15)
+            forEach (i in 0..15)
+              local pos = ((chunk_j*16+j) * 256) + (chunk_i*16) + i
+              if (reader.read != 1) bitmap.pixels[ pos ] = Color.WHITE
+            endForEach
+          endForEach
+        endForEach
+      endForEach
+      bitmap.resize( 512, 512 )
+      bitmap.save_as_png( File("U5Map.png") )
+      System.run( "open U5Map.png" )
+endClass

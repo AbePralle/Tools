@@ -1,0 +1,53 @@
+uses Bitmap
+
+U5MapGen()
+
+class U5MapGen
+  PROPERTIES
+    chunk_map = ...
+      "~~#############~" ...
+      "~##############~" ...
+      "###############~" ...
+      "################" ...
+      "################" ...
+      "################" ...
+      "###########~####" ...
+      "#######~~~##~###" ...
+      "~######~~~##~###" ...
+      "#######~#~~~~##~" ...
+      "#######~#~~##~~~" ...
+      "~~######~~~~~~##" ...
+      "~##~####~~##~###" ...
+      "~##~####~~##~###" ...
+      "~###############" ...
+      "~~~##~##########"
+
+  METHODS
+    method init
+      local bitmap = Bitmap( 256*16, 256*16 )
+      local tiles = Bitmap( File("Assets/U5Tiles.png") ).split( 32, 16 )
+
+      local reader = File( "Assets/BRIT.DAT" ).reader
+      local chunk_type_reader = chunk_map.reader
+
+      forEach (chunk_j in 0..15)
+        forEach (chunk_i in 0..15)
+          if (chunk_type_reader.read == '~')
+            # All water
+            forEach (j in 0..15)
+              forEach (i in 0..15)
+                tiles[ 1 ].blit( bitmap, (chunk_i*16+i)*16, (chunk_j*16+j)*16 )
+              endForEach
+            endForEach
+          else
+            forEach (j in 0..15)
+              forEach (i in 0..15)
+                tiles[ reader.read&511 ].blit( bitmap, (chunk_i*16+i)*16, (chunk_j*16+j)*16 )
+              endForEach
+            endForEach
+          endIf
+        endForEach
+      endForEach
+      bitmap.save_as_png( File("U5Map.png") )
+      System.run( "open U5Map.png" )
+endClass
