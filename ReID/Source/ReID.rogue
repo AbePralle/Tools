@@ -191,12 +191,12 @@ class ReID
           if (ch.is_lowercase)
             if (prev.is_uppercase)
               builder.remove_last
-              if (builder.count) builder.print '_'
+              if (builder.count and builder.last.is_letter) builder.print '_'
               builder.print prev
             endIf
           elseIf (ch.is_uppercase)
             if (prev.is_lowercase)
-              if (builder.count) builder.print '_'
+              builder.print '_'
             endIf
           endIf
           builder.print ch
