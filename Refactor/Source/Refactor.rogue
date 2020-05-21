@@ -93,10 +93,12 @@ class Refactor
                |    Note: the default change description output file, "Changes.txt", is excluded
                |    by default.
                |
-               |  (wildcard_filepath)
-               |    Use '**' to span any number of folders, '*' to span any text except '/',
-               |    '***/' to match what follows in the current folder or in subfolders, and
-               |    '?' for any single character.  Example: "***/*.rogue"
+               |  [wildcard_filepath]
+               |    Use "quoted/wildcard/filepaths" to ensure that nonstandard wildcards '**'
+               |    and '***/' are recognized. Note: '?' can be used to match a single character.
+               |      "*.rogue"     # matches files in the current folder ending with ".rogue"
+               |      "**/*.rogue"  # matches files in subfolders but not in the current folder
+               |      "***/*.rogue" # matches files in subfolders or in the current folder.
 
     method collect_changes( from_name:String, to_name:String, filepaths:String[] )
       changes = Changes()
@@ -140,8 +142,8 @@ class Refactor
         elseIf (has_uppercase)
           if (has_lowercase)
             # CamelCase
-            Old_Parts = CamelCase_to_Capitalized_Serpent_Case( from_name ).split( '_' )
-            New_Parts = CamelCase_to_Capitalized_Serpent_Case( to_name ).split( '_' )
+            Old_Parts = convert_CamelCase_to_Capitalized_Serpent_Case( from_name ).split( '_' )
+            New_Parts = convert_CamelCase_to_Capitalized_Serpent_Case( to_name ).split( '_' )
           else
             # ALLCAPS
             Old_Parts = [ from_name.to_lowercase.capitalized ]
@@ -182,19 +184,19 @@ class Refactor
 
       changes.preview_and_apply
 
-    method CamelCase_to_Capitalized_Serpent_Case( text:String )->String
+    method convert_CamelCase_to_Capitalized_Serpent_Case( text:String )->String
       use builder = StringBuilder.pool
         local prev : Character
         forEach (ch in text)
           if (ch.is_lowercase)
             if (prev.is_uppercase)
               builder.remove_last
-              builder.print '_'
+              if (builder.count) builder.print '_'
               builder.print prev
             endIf
           elseIf (ch.is_uppercase)
             if (prev.is_lowercase)
-              builder.print '_'
+              if (builder.count) builder.print '_'
             endIf
           endIf
           builder.print ch
