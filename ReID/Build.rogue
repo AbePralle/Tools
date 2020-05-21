@@ -41,12 +41,12 @@
 description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
-$define PROJECT           "Refactor"
-$define SRC_FILEPATH      "Source/Refactor.rogue"
-$define CPP_FILEPATH      "Build/Refactor.cpp"
-$define EXE_BASE_FILEPATH "Build/Refactor"
-$define LAUNCHER_NAME     "refactor"
-$define LAUNCHER_FILEPATH "/usr/local/bin/refactor"
+$define PROJECT           "ReID"
+$define SRC_FILEPATH      "Source/ReID.rogue"
+$define CPP_FILEPATH      "Build/ReID.cpp"
+$define EXE_BASE_FILEPATH "Build/ReID"
+$define LAUNCHER_NAME     "reid"
+$define LAUNCHER_FILEPATH "/usr/local/bin/reid"
 routine exe_filepath->String
   return "$-$" (EXE_BASE_FILEPATH,System.os)
 endRoutine
@@ -54,7 +54,7 @@ endRoutine
 routine rogo_default
   rogo_build
   rogo_run
-  rogo_install_launcher  # Uncomment to automatically install a /usr/local/bin/refactor launcher
+  rogo_install_launcher  # Uncomment to automatically install a /usr/local/bin/reid launcher
 endRoutine
 
 routine rogo_build
