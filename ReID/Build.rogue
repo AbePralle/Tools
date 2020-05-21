@@ -71,7 +71,11 @@ routine rogo_build
 endRoutine
 
 routine rogo_run
-  execute( ''$'' (exe_filepath), &suppress_error )
+  #execute( ''$'' (exe_filepath), &suppress_error )
+  File.delete( "Alpha" )
+  File.delete( "Beta" )
+  execute "cp -r Omega Alpha"
+  execute( ''$ Alpha Beta "Alpha/**" "Alpha/**"'' (exe_filepath), &suppress_error )
 endRoutine
 
 routine rogo_install_launcher
