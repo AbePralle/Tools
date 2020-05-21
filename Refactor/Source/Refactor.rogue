@@ -1,7 +1,9 @@
 #===============================================================================
 # Refactor.rogue
-# 2020-05-17
+# 2020-05-17 by Abe Pralle
 #===============================================================================
+$define VERSION "1.0"
+
 Refactor()
 
 class Refactor
@@ -63,19 +65,25 @@ class Refactor
       endWhich
 
     method print_usage
-      println @|USAGE
-               |  refactor [--exact] old_name new_name [wildcard_filepaths] [--exclude] [...]
+      println "ReID version " + VERSION
+      println @|
+               |USAGE
+               |  refactor [--exact] old_id new_id         [wildcard_filepaths] [--exclude] [...]
+               |  refactor old.package.id  new.package.id  [wildcard_filepaths] [--exclude] [...]
+               |  refactor old/folder/path new/folder/path [wildcard_filepaths] [--exclude] [...]
                |  refactor <Changes.txt>
                |
                |OPTIONS
                |  --exact
-               |    Only exact matches of 'old_name' are changed to 'new_name'. If '--exact' is
+               |    Only exact matches of 'old_id' are changed to 'new_id'. If '--exact' is
                |    not specified then variations are searched for - replacing "alphaBeta" makes
                |    appropriate changes to "alphaBeta", "alpha_beta", "AlphaBeta", "Alpha_Beta",
                |    and "ALPHA_BETA".
                |
-               |    Note: if you specify an "old name" using a dot notation or package notation,
-               |    --exact is implied (e.g. 'refactor com.company.this com.company.that').
+               |    If you specify an old.package.id then --exact is implied as is old/package/id
+               |    path replacement.
+               |
+               |    If you specify an old/folder/path then --exact is implied.
                |
                |  --exclude [...]
                |    Files matching any wildcard patterns coming after '--exclude' are skipped.
@@ -89,17 +97,12 @@ class Refactor
                |    Use '**' to span any number of folders, '*' to span any text except '/',
                |    '***/' to match what follows in the current folder or in subfolders, and
                |    '?' for any single character.  Example: "***/*.rogue"
-               |
-               |NOTES
-               |
-               |  The console output of the first variant can be saved and used as input for
-               |  the second variant.
 
     method collect_changes( from_name:String, to_name:String, filepaths:String[] )
       changes = Changes()
       local replacements = changes.replacements
 
-      if (is_exact)
+      if (is_exact or from_name.contains('/'))
         replacements[ from_name ] = to_name
 
       elseIf (from_name.contains('.'))
@@ -316,19 +319,22 @@ class Changes
       println
 
       if (file_changes.is_empty)
-        println "*** No changes required - no IDs match search patterns. ***"
+        println "*** No changes required; no IDs match search patterns. ***"
         return
       endIf
 
       println "# REID PENDING CHANGES"
       println ((forEach in file_changes)->String(&styled))
 
-      println "Review the changes above and then choose whether to proceed with changes (y/s/n):"
-      println "  y            - Indicated changes will be performed."
-      println ''  s [filepath] - Save changes to filepath (default: "Changes.txt"). Then edit as''
-      println ''                 desired, deleting or modifying listed changes, and then run''
-      println ''                 e.g. "refactor Changes.txt".''
-      println "  n            - No changes performed."
+      println @|Review the changes above and then choose whether to proceed with changes (y/s/n):
+               |  y            - Indicated changes will be performed.
+               |  s [filepath] - Save changes to filepath (default: "Changes.txt"). Then edit as
+               |                 desired, deleting or modifying listed changes, and then run
+               |                 e.g. "refactor Changes.txt".
+               |  n            - No changes performed.
+               |
+               |*** WARNING: Please back up all listed files before proceeding. ***
+               |
 
       local choice = Console.input( "Make changes now (y/s/n)? " )
       if (choice.count == 0) choice = "n"
@@ -382,6 +388,8 @@ class FileChanges
       line_changes.add( LineChange(changes,line,old_content,new_content) )
 
     method apply_changes
+      if (not line_changes.count and not is_folder) return
+
       println "[$]" (filepath)
       if (line_changes.count)
         println "> Replace identifiers"
@@ -405,9 +413,18 @@ class FileChanges
         if (is_folder)
           # Rename e.g. a/b/c to x/y
           println "> Reorganize $ -> $" (filepath,new_filepath)
-          File.sync_from( Files(filepath,"**",&!ignore_hidden), new_filepath, &keep_unused, &verbose )
-          while (filepath != "" and File.listing(filepath).is_empty)
-            println "> Delete " + filepath
+          local files = Files( filepath, "**", &!ignore_hidden )
+          File.sync_from( files, new_filepath, &keep_unused, &verbose )
+          forEach (old_filepath in files)
+            println "> Delete old copy of " + old_filepath
+            File.delete( old_filepath )
+          endForEach
+
+          local unused_path = filepath
+          while (unused_path != "" and File.listing(unused_path).is_empty)
+            println "> Delete " + unused_path
+            File.delete( unused_path )
+            unused_path = File.folder( unused_path )
           endWhile
 
         elseIf (File.filename(filepath) != File.filename(new_filepath))
@@ -417,7 +434,7 @@ class FileChanges
             dest_filepath = "$/$" (File.folder(filepath),dest_filepath)
           endIf
           println "> Rename $ -> $" (filepath,dest_filepath)
-          #File.rename( filepath, new_filepath )
+          File.rename( filepath, new_filepath )
         endIf
       endIf
 

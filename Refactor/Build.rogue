@@ -71,11 +71,7 @@ routine rogo_build
 endRoutine
 
 routine rogo_run
-  #execute ''$ $ $ --exclude "***/*.cpp" "***/*.h"'' (exe_filepath,"refactor","change_id")
-  #execute ''$ $ $ --exclude Build.rogue "***/*.cpp" "***/*.h"'' (exe_filepath,"UITest","UITriumphHTML")
-  #execute ''$ $ $ --exclude Build.rogue "***/*.cpp" "***/*.h"'' (exe_filepath,"alpha.omega","beta.delta")
-  execute ''$ Changes.txt'' (exe_filepath)
-
+  execute( ''$'' (exe_filepath), &suppress_error )
 endRoutine
 
 routine rogo_install_launcher
