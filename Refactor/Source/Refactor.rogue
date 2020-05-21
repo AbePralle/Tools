@@ -88,10 +88,10 @@ class Refactor
                |  --exclude [...]
                |    Files matching any wildcard patterns coming after '--exclude' are skipped.
                |    For example:
-               |      --exclude "***/*.o" "***/*.temp"
+               |      --exclude "***/*.backup" "Build/**"
                |
-               |    Note: the default change description output file, "Changes.txt", is excluded
-               |    by default.
+               |    Note: binary files as well as the default change description output file,
+               |    "Changes.txt" are excluded by default.
                |
                |  [wildcard_filepath]
                |    Use "quoted/wildcard/filepaths" to ensure that nonstandard wildcards '**'
