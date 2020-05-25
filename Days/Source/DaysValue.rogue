@@ -1,0 +1,35 @@
+module Days
+
+class DaysInterval( years:Int32, months:Int32, days:Int32 ) [compound]
+  GLOBAL METHODS
+    method days( n:Int32 )->DaysInterval
+      return DaysInterval( 0, 0, n )
+
+    method months( n:Int32 )->DaysInterval
+      return DaysInterval( 0, n, 0 )
+
+    method years( n:Int32 )->DaysInterval
+      return DaysInterval( n, 0, 0 )
+
+  METHODS
+    method to->String
+      local parts = String[]
+      if (years)  parts.add( "# year".pluralized(years) )
+      if (months) parts.add( "# month".pluralized(months) )
+      if (days or parts.is_empty) parts.add( "# day".pluralized(days) )
+      return parts.join( " " )
+endClass
+
+class DaysValue( date:Date?, interval:DaysInterval? ) [compound]
+  GLOBAL METHODS
+    method create( date:Date )->DaysValue
+      return DaysValue( date, null )
+
+    method create( interval:DaysInterval )->DaysValue
+      return DaysValue( null, interval )
+
+  METHODS
+    method to->String
+      if (date) return date.value->String( "yyyy.mm.dd" )
+      else      return interval.value->String
+endClass
