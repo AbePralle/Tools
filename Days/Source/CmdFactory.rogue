@@ -27,6 +27,7 @@ class CmdFactory
         case 17 : return MD( t, args )
         case 18 : return DMY( t, args )
         case 19 : return DM( t, args )
+        case 20 : return MDYOrYMD( t, args )
         others
           throw Error( "[INTERNAL] CmdFactory.create_cmd() index out of bounds: " + index )
       endWhich

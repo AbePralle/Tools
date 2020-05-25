@@ -29,6 +29,36 @@ class DaysValue( date:Date?, interval:DaysInterval? ) [compound]
       return DaysValue( null, interval )
 
   METHODS
+    method operator+( other:DaysValue )->DaysValue
+      #local date     = which{ date:date.value || other.date:other.date.value }
+      #local interval = which{ date:date.value || other.date:other.date.value }
+      #trace date.exists
+      # TODO
+      return this
+      #{
+      if (date)
+        if (other.date)
+          return DaysValue( DaysInterval.days(date.value+other.date.value) )
+        else
+          local date = Date( date.value.year-other.interval.value.years, date.value.month, date.value.day )
+          loop (other.interval.value.months)
+            date += date.days_in_month
+          endLoop
+          return DaysValue( date - other.interval.value.days )
+        endIf
+      }#
+
+    method operator-( other:DaysValue )->DaysValue
+      if (other.date)
+        return DaysValue( DaysInterval.days(date.value-other.date.value) )
+      else
+        local date = Date( date.value.year-other.interval.value.years, date.value.month, date.value.day )
+        loop (other.interval.value.months)
+          date += date.days_in_month
+        endLoop
+        return DaysValue( date - other.interval.value.days )
+      endIf
+
     method to->String
       if (date) return date.value->String( "yyyy.mm.dd" )
       else      return interval.value->String

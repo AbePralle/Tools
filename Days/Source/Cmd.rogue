@@ -126,12 +126,29 @@ endClass
 
 class Add : Binary
   METHODS
+    method evaluate->DaysValue
+      local left = left.evaluate
+      local right = right.evaluate
+      if (left.date and right.date)
+        throw t.error( "ERROR: at least one value must be an interval when adding." )
+      endIf
+      return left + right
+
     method op->String
       return "+"
 endClass
 
 class Subtract : Binary
   METHODS
+    method evaluate->DaysValue
+      local left = left.evaluate
+      local right = right.evaluate
+      if (left.date)
+        return left - right
+      else
+        throw t.error( "ERROR: only 'date - interval' and 'date - date' are allowed when subtracting." )
+      endIf
+
     method op->String
       return "-"
 endClass
@@ -379,3 +396,38 @@ class DM( t, day:Cmd, month:Cmd ) : Cmd
       write( month, builder )
       builder.print( ')' )
 endClass
+
+class MDYOrYMD( t, month:Cmd, day:Cmd, year:Cmd ) : Cmd
+  METHODS
+    method init( t, args:CmdInitArgs )
+      args.require_count( 3 )
+      this.month = args[ 0 ]
+      this.day = args[ 1 ]
+      this.year = args[ 2 ]
+
+    method evaluate->DaysValue
+      local m = month->Int32
+      local d = day->Int32
+      local y = year->Int32
+
+      if (m >= 100)
+        # MDY is actually YMD
+        swapValues( m, y )
+        swapValues( m, d )
+      endIf
+
+      y = y.clamped_low( 1 )
+      m = m.clamped( 1, 12 )
+      d = d.clamped( 1, Date.days_in_month(y,m) )
+      return DaysValue( Date(y,m,d) )
+
+    method write( builder:StringBuilder )
+      builder.print( "MDYorYMD(" )
+      write( month, builder )
+      builder.print( ',' )
+      write( day, builder )
+      builder.print( ',' )
+      write( year, builder )
+      builder.print( ')' )
+endClass
+

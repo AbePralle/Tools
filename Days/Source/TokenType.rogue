@@ -27,9 +27,10 @@ enum TokenType( symbol:String, attributes=TokenTypeAttribute.NONE:TokenTypeAttri
   SYMBOL_CARET("^")                                   = 17
   SYMBOL_CLOSE_PAREN(")")                             = 18
   SYMBOL_COMMA(",")                                   = 19
-  SYMBOL_EQUALS("=")                                  = 20
-  SYMBOL_MINUS("-")                                   = 21
-  SYMBOL_OPEN_PAREN("(")                              = 22
-  SYMBOL_PLUS("+")                                    = 23
-  SYMBOL_SLASH("/")                                   = 24
+  SYMBOL_DOT(".")                                     = 20
+  SYMBOL_EQUALS("=")                                  = 21
+  SYMBOL_MINUS("-")                                   = 22
+  SYMBOL_OPEN_PAREN("(")                              = 23
+  SYMBOL_PLUS("+")                                    = 24
+  SYMBOL_SLASH("/")                                   = 25
 endEnum

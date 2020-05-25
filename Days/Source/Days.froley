@@ -29,6 +29,7 @@ SYMBOL_ASTERISK             *
 SYMBOL_CARET                ^
 SYMBOL_CLOSE_PAREN          )
 SYMBOL_COMMA                ,
+SYMBOL_DOT                  .
 SYMBOL_EQUALS               =
 SYMBOL_MINUS                -
 SYMBOL_OPEN_PAREN           (
@@ -134,6 +135,9 @@ return
     if (consume(WEEKS))   produce IntervalWeeks( value=t.content:Int32 )
     if (consume(DAYS))    produce IntervalDays( value=t.content:Int32 )
     if (nextIs(MONTH))    create Day( value=t.content:Int32 ); day_month_year; return
+    if (consume('-'))     create Month(value=t:Int32); month_day_year_hyphens; return
+    if (consume('/'))     create Month(value=t:Int32); month_day_year_slashes; return
+    if (consume('.'))     create Month(value=t:Int32); month_day_year_dots; return
 
     produce IntervalDays( value=t.content:Int32 )
   endOn
@@ -150,7 +154,7 @@ return
         create Year( value=t.content:Int32 )
         produce MDY( month, day, year )
       else
-        syntaxError "Expected year."
+        syntaxError "Integer year expected."
       endOn
     else
       on INTEGER
@@ -171,4 +175,37 @@ return
   else
     produce DM( day, month )
   endOn
+
+- month_day_year_hyphens
+  on INTEGER
+    create Day(value=t:Int32)
+    mustConsume '-'
+    on INTEGER
+      create Year(value=t:Int32)
+      produce MDYOrYMD( month, day, year )
+    endOn
+  endOn
+  syntaxError "Integer date expected."
+
+- month_day_year_slashes
+  on INTEGER
+    create Day(value=t:Int32)
+    mustConsume '/'
+    on INTEGER
+      create Year(value=t:Int32)
+      produce MDYOrYMD( month, day, year )
+    endOn
+  endOn
+  syntaxError "Integer date expected."
+
+- month_day_year_dots
+  on INTEGER
+    create Day(value=t:Int32)
+    mustConsume '.'
+    on INTEGER
+      create Year(value=t:Int32)
+      produce MDYOrYMD( month, day, year )
+    endOn
+  endOn
+  syntaxError "Integer date expected."
 
