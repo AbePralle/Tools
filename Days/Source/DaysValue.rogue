@@ -1,62 +1,31 @@
 module Days
 
-class DaysInterval( years:Int32, months:Int32, days:Int32 ) [compound]
-  GLOBAL METHODS
-    method days( n:Int32 )->DaysInterval
-      return DaysInterval( 0, 0, n )
-
-    method months( n:Int32 )->DaysInterval
-      return DaysInterval( 0, n, 0 )
-
-    method years( n:Int32 )->DaysInterval
-      return DaysInterval( n, 0, 0 )
-
-  METHODS
-    method to->String
-      local parts = String[]
-      if (years)  parts.add( "# year".pluralized(years) )
-      if (months) parts.add( "# month".pluralized(months) )
-      if (days or parts.is_empty) parts.add( "# day".pluralized(days) )
-      return parts.join( " " )
-endClass
-
-class DaysValue( date:Date?, interval:DaysInterval? ) [compound]
+class DaysValue( date:Date?, interval:DateInterval? ) [compound]
   GLOBAL METHODS
     method create( date:Date )->DaysValue
       return DaysValue( date, null )
 
-    method create( interval:DaysInterval )->DaysValue
+    method create( interval:DateInterval )->DaysValue
       return DaysValue( null, interval )
 
   METHODS
     method operator+( other:DaysValue )->DaysValue
-      #local date     = which{ date:date.value || other.date:other.date.value }
-      #local interval = which{ date:date.value || other.date:other.date.value }
-      #trace date.exists
-      # TODO
-      return this
-      #{
-      if (date)
-        if (other.date)
-          return DaysValue( DaysInterval.days(date.value+other.date.value) )
-        else
-          local date = Date( date.value.year-other.interval.value.years, date.value.month, date.value.day )
-          loop (other.interval.value.months)
-            date += date.days_in_month
-          endLoop
-          return DaysValue( date - other.interval.value.days )
-        endIf
-      }#
+      # Requires: Date+Interval, Interval+Date, or Interval+Interval
+      if (date or other.date)
+        # Date + Interval or Interval + Date
+        local date     = which{ date:date.value || other.date.value }
+        local interval = which{ interval:interval.value || other.interval.value }
+        return DaysValue( date + interval )
+      else
+        return DaysValue( interval.value + other.interval.value )
+      endIf
 
     method operator-( other:DaysValue )->DaysValue
+      # Requires: Date-Date or Date-Interval
       if (other.date)
-        return DaysValue( DaysInterval.days(date.value-other.date.value) )
+        return DaysValue( DateInterval.days(date.value-other.date.value) )
       else
-        local date = Date( date.value.year-other.interval.value.years, date.value.month, date.value.day )
-        loop (other.interval.value.months)
-          date += date.days_in_month
-        endLoop
-        return DaysValue( date - other.interval.value.days )
+        return DaysValue( date.value - other.interval.value )
       endIf
 
     method to->String

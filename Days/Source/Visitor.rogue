@@ -34,96 +34,75 @@ class Visitor
       if (cmd.right) cmd.right = cmd.right.dispatch( this )
       return cmd
 
-    method visit( cmd:Assign )->Assign
+    method visit( cmd:Add )->Cmd
       if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
       if (cmd.right) cmd.right = cmd.right.dispatch( this )
       return cmd
 
-    method visit( cmd:Add )->Add
+    method visit( cmd:Subtract )->Cmd
       if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
       if (cmd.right) cmd.right = cmd.right.dispatch( this )
       return cmd
 
-    method visit( cmd:Subtract )->Subtract
-      if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
-      if (cmd.right) cmd.right = cmd.right.dispatch( this )
+    method visit( cmd:Today )->Cmd
       return cmd
 
-    method visit( cmd:Multiply )->Multiply
-      if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
-      if (cmd.right) cmd.right = cmd.right.dispatch( this )
+    method visit( cmd:IntervalDays )->Cmd
       return cmd
 
-    method visit( cmd:Divide )->Divide
-      if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
-      if (cmd.right) cmd.right = cmd.right.dispatch( this )
+    method visit( cmd:IntervalYears )->Cmd
       return cmd
 
-    method visit( cmd:Power )->Power
-      if (cmd.left)  cmd.left  = cmd.left.dispatch( this )
-      if (cmd.right) cmd.right = cmd.right.dispatch( this )
+    method visit( cmd:IntervalMonths )->Cmd
       return cmd
 
-    method visit( cmd:Negate )->Negate
-      if (cmd.operand)  cmd.operand = cmd.operand.dispatch( this )
+    method visit( cmd:IntervalWeeks )->Cmd
       return cmd
 
-    method visit( cmd:Access )->Access
+    method visit( cmd:Month )->Cmd
       return cmd
 
-    method visit( cmd:Today )->Today
+    method visit( cmd:Day )->Cmd
       return cmd
 
-    method visit( cmd:IntervalDays )->IntervalDays
+    method visit( cmd:Year )->Cmd
       return cmd
 
-    method visit( cmd:IntervalYears )->IntervalYears
-      return cmd
-
-    method visit( cmd:IntervalMonths )->IntervalMonths
-      return cmd
-
-    method visit( cmd:IntervalWeeks )->IntervalWeeks
-      return cmd
-
-    method visit( cmd:Number )->Number
-      return cmd
-
-
-    method visit( cmd:Month )->Month
-      return cmd
-
-    method visit( cmd:Day )->Day
-      return cmd
-
-    method visit( cmd:Year )->Year
-      return cmd
-
-    method visit( cmd:MDY )->MDY
+    method visit( cmd:MDY )->Cmd
       if (cmd.month) cmd.month = cmd.month.dispatch( this )
       if (cmd.day) cmd.day = cmd.day.dispatch( this )
       if (cmd.year) cmd.year = cmd.year.dispatch( this )
       return cmd
 
-    method visit( cmd:MD )->MD
+    method visit( cmd:MD )->Cmd
       if (cmd.month) cmd.month = cmd.month.dispatch( this )
       if (cmd.day) cmd.day = cmd.day.dispatch( this )
       return cmd
 
-    method visit( cmd:DMY )->DMY
+    method visit( cmd:DMY )->Cmd
       if (cmd.day) cmd.day = cmd.day.dispatch( this )
       if (cmd.month) cmd.month = cmd.month.dispatch( this )
       if (cmd.year) cmd.year = cmd.year.dispatch( this )
       return cmd
 
-    method visit( cmd:DM )->DM
+    method visit( cmd:DM )->Cmd
       if (cmd.day) cmd.day = cmd.day.dispatch( this )
       if (cmd.month) cmd.month = cmd.month.dispatch( this )
       return cmd
 
-    method visit( cmd:MDYOrYMD )->MDYOrYMD
+    method visit( cmd:MDYOrYMD )->Cmd
       if (cmd.month) cmd.month = cmd.month.dispatch( this )
       if (cmd.day) cmd.day = cmd.day.dispatch( this )
       if (cmd.year) cmd.year = cmd.year.dispatch( this )
+      return cmd
+
+    method visit( cmd:Yesterday )->Cmd
+      return cmd
+
+    method visit( cmd:Tomorrow )->Cmd
+      return cmd
+
+
+    method visit( cmd:Help )->Cmd
       return cmd
 endClass

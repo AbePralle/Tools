@@ -117,20 +117,13 @@ class Binary( t, left:Cmd, right:Cmd ) : Cmd
       builder.print( ')' )
 endClass
 
-
-class Assign : Binary
-  METHODS
-    method op->String
-      return "="
-endClass
-
 class Add : Binary
   METHODS
     method evaluate->DaysValue
       local left = left.evaluate
       local right = right.evaluate
       if (left.date and right.date)
-        throw t.error( "ERROR: at least one value must be an interval when adding." )
+        throw t.error( "Expected Date + Interval, Interval + Date, or Interval + Interval." )
       endIf
       return left + right
 
@@ -146,60 +139,12 @@ class Subtract : Binary
       if (left.date)
         return left - right
       else
-        throw t.error( "ERROR: only 'date - interval' and 'date - date' are allowed when subtracting." )
+        throw t.error( "Expected Date - Date or Date - Interval." )
       endIf
 
     method op->String
       return "-"
 endClass
-
-class Multiply : Binary
-  METHODS
-    method op->String
-      return "*"
-endClass
-
-class Divide : Binary
-  METHODS
-    method op->String
-      return "/"
-endClass
-
-class Power : Binary
-  METHODS
-    method op->String
-      return "^"
-endClass
-
-class Negate : Unary
-  METHODS
-    method op->String
-      return "-"
-endClass
-
-class Access( t, name:String ) : Cmd
-  METHODS
-    method init( t, args:CmdInitArgs )
-      args.require_count( 0 )
-      this.name = t.content
-
-    method write( builder:StringBuilder )
-      builder.print( name )
-endClass
-
-class Number( t, value:Int32 ) : Cmd
-  METHODS
-    method init( t, args:CmdInitArgs )
-      args.require_count( 0 )
-      this.value = t.content->Int32
-
-    method evaluate->DaysValue
-      return DaysValue( DaysInterval.days(value) )
-
-    method write( builder:StringBuilder )
-      builder.print( ""+value )
-endClass
-
 
 class Today : Cmd
   METHODS
@@ -217,7 +162,7 @@ class IntervalDays( t, value:Int32 ) : Cmd
       this.value = t.content->Int32
 
     method evaluate->DaysValue
-      return DaysValue( DaysInterval.days(value) )
+      return DaysValue( DateInterval.days(value) )
 
     method write( builder:StringBuilder )
       builder.print( ""+value )
@@ -230,7 +175,7 @@ class IntervalYears( t, value:Int32 ) : Cmd
       this.value = t.content->Int32
 
     method evaluate->DaysValue
-      return DaysValue( DaysInterval.years(value) )
+      return DaysValue( DateInterval.years(value) )
 
     method write( builder:StringBuilder )
       builder.print( ""+value )
@@ -243,7 +188,7 @@ class IntervalMonths( t, value:Int32 ) : Cmd
       this.value = t.content->Int32
 
     method evaluate->DaysValue
-      return DaysValue( DaysInterval.months(value) )
+      return DaysValue( DateInterval.months(value) )
 
     method write( builder:StringBuilder )
       builder.print( ""+value )
@@ -256,7 +201,7 @@ class IntervalWeeks( t, value:Int32 ) : Cmd
       this.value = t.content->Int32
 
     method evaluate->DaysValue
-      return DaysValue( DaysInterval.days(value*7) )
+      return DaysValue( DateInterval.days(value*7) )
 
     method write( builder:StringBuilder )
       builder.print( ""+value )
@@ -333,7 +278,7 @@ class MD( t, month:Cmd, day:Cmd ) : Cmd
       return DaysValue( Date(y,m,d) )
 
     method write( builder:StringBuilder )
-      builder.print( "MD" )
+      builder.print( "MD(" )
       write( month, builder )
       builder.print( ',' )
       write( day, builder )
@@ -366,9 +311,6 @@ class DMY( t, day:Cmd, month:Cmd, year:Cmd ) : Cmd
       this.month = args[ 1 ]
       this.year = args[ 2 ]
 
-    method evaluate->DaysValue
-      return MDY( t, month, day, year ).evaluate
-
     method write( builder:StringBuilder )
       builder.print( "DMY(" )
       write( day, builder )
@@ -386,9 +328,6 @@ class DM( t, day:Cmd, month:Cmd ) : Cmd
       this.day = args[ 0 ]
       this.month = args[ 1 ]
 
-    method evaluate->DaysValue
-      return MD( t, month, day ).evaluate
-
     method write( builder:StringBuilder )
       builder.print( "DM(" )
       write( day, builder )
@@ -405,22 +344,6 @@ class MDYOrYMD( t, month:Cmd, day:Cmd, year:Cmd ) : Cmd
       this.day = args[ 1 ]
       this.year = args[ 2 ]
 
-    method evaluate->DaysValue
-      local m = month->Int32
-      local d = day->Int32
-      local y = year->Int32
-
-      if (m >= 100)
-        # MDY is actually YMD
-        swapValues( m, y )
-        swapValues( m, d )
-      endIf
-
-      y = y.clamped_low( 1 )
-      m = m.clamped( 1, 12 )
-      d = d.clamped( 1, Date.days_in_month(y,m) )
-      return DaysValue( Date(y,m,d) )
-
     method write( builder:StringBuilder )
       builder.print( "MDYorYMD(" )
       write( month, builder )
@@ -431,3 +354,58 @@ class MDYOrYMD( t, month:Cmd, day:Cmd, year:Cmd ) : Cmd
       builder.print( ')' )
 endClass
 
+class Yesterday : Cmd
+  METHODS
+    method evaluate->DaysValue
+      return DaysValue( Date.today - 1 )
+
+    method write( builder:StringBuilder )
+      builder.print( "yesterday" )
+endClass
+
+
+class Tomorrow : Cmd
+  METHODS
+    method evaluate->DaysValue
+      return DaysValue( Date.today + 1 )
+
+    method write( builder:StringBuilder )
+      builder.print( "tomorrow" )
+endClass
+
+
+class Help : Cmd
+  METHODS
+    method evaluate->DaysValue
+      println @|Days Calculator
+               |
+      println VERSION_INFO
+      println @|
+               |USAGE
+               |  days              # Interactive mode
+               |  days <command>    # Runs computation and displays results
+               |
+               |
+               |COMMANDS
+               |  <Date>                - Gives days since or until the given date.
+               |  <Date> +/- <Interval> - Reports the computed date.
+               |  <Date> - <Date>       - Gives elapsed number of days between the two dates.
+               |  q                     - Quit
+               |
+               |DATE AND INTERVAL FORMATS
+               |  January 1, 2020
+               |  JAN 1 2020           # Case-insensitive month names
+               |  1 jan 2020
+               |  12.1.2020 / 2020.12.1
+               |  12-1-2020 / 2020-12-1
+               |  12/1/2020 / 2020/12/1
+               |  today / tomorrow / yesterday
+               |  1 / 1d / 1 day / 2 days
+               |  1w / 1 week / 2 weeks
+               |  1m / 1 mo / 1 month / 2 months
+               |  1y / 1 year / 2 years
+      return DaysValue( null, null )
+
+    method write( builder:StringBuilder )
+      builder.print( "help" )
+endClass

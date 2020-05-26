@@ -94,7 +94,7 @@ routine rogo_build
 endRoutine
 
 routine rogo_run
-  execute "$ May 24, 2020" (File.conventional_filepath(exe_filepath))
+  execute "$ today" (File.conventional_filepath(exe_filepath))
 endRoutine
 
 routine rogo_install_launcher
