@@ -1,0 +1,118 @@
+#===============================================================================
+# GitCal.rogue
+# June 4, 2020
+#===============================================================================
+$requireRogue "1.7.3"
+
+GitCal()
+
+class GitCal
+  METHODS
+    method init
+      local cmd = @|git log --date=format:"%Y.%m.%d" --pretty=format:"%cd" --abbrev-commit
+      local result = Process.run( cmd, &env )
+      if (not result.success)
+        Console.error.println "Failed to get project history. Make sure that 'git' can be run from the command prompt."
+        System.exit 1
+      endIf
+
+      local filtered = StringBuilder()
+      forEach (ch in result->String)
+        if ("0123456789.\n".contains(ch)) filtered.print( ch )
+      endForEach
+
+      local dates = filtered->String.replacing("* ","").split('\n')
+
+      local years = Table<<Int32,Year>>()
+      forEach (date in dates)
+        date = date.trimmed
+        if (date != "")
+          block date = Date( date )
+            local y = date.year
+            if (not years.contains(y)) years[y] = Year( y )
+            years[y].add( date )
+          endBlock
+        endIf
+      endForEach
+
+      years.sort( (a,b) => a.key < b.key )
+
+      println (forEach in years)
+endClass
+
+class Year
+  PROPERTIES
+    value  : Int32
+    months = Month[](12)
+
+  METHODS
+    method init( value )
+      months.add( Month(this,forEach in 1..12) )
+
+    method add( date:Date )
+      months[ date.month - 1 ].add( date )
+
+    method month( column:Int32, row:Int32 )->Month
+      return months[ row*4 + column ]
+
+    method to->String
+      local builder = StringBuilder()
+      forEach (row in 0..2)
+        forEach (column in 0..3)
+          month( column, row ).print_name( builder )
+          builder.print "  "
+        endForEach
+        builder.println
+
+        forEach (column in 0..3)
+          month( column, row ).print_days_header( builder )
+          builder.print "  "
+        endForEach
+        builder.println
+
+        forEach (week in 0..5)
+          forEach (column in 0..3)
+            month( column, row ).print_week( week, builder )
+            builder.print "  "
+          endForEach
+          builder.println
+        endForEach
+      endForEach
+      return builder->String
+endClass
+
+class Month( year:Year, value:Int32 )
+  PROPERTIES
+    marked_days = Set<<Int32>>()
+
+  METHODS
+    method add( date:Date )
+      marked_days.add( date.day )
+
+    method print_name( builder:StringBuilder )
+      local st = "$ $" (Date.month_names[value-1],year.value)
+      if (st.count < 20) st = (" " * ((20-st.count)/2)) + st
+      if (st.count < 20) st += " " * (20-st.count)
+      builder.print st
+
+    method print_days_header( builder:StringBuilder )
+      builder.print "Su Mo Tu We Th Fr Sa"
+
+    method print_week( index:Int32, builder:StringBuilder )
+      local d = index * 7 - (Date(year.value,this.value,1).day_of_week-1)
+      local max = Date.days_in_month( year.value, this.value )
+      forEach (i in 0..6)
+        if (i > 0) builder.print ' '
+        if (d < 1 or d > max)
+          builder.print "  "
+        else
+          local is_marked = marked_days.contains( d )
+          if (is_marked) ConsoleStyle.print( ConsoleStyle.INVERSE, builder )
+          if (d < 10) builder.print ' '
+          builder.print d
+          if (is_marked) ConsoleStyle.print( ConsoleStyle.INVERSE_OFF, builder )
+        endIf
+        ++d
+      endForEach
+endClass
+

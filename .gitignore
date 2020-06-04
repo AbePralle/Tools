@@ -4,6 +4,7 @@
 /ReID
 
 *.swp
+*.swo
 Build
 .rogo
 .DS_Store
