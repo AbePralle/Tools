@@ -21,7 +21,7 @@ class GitCal
         if ("0123456789.\n".contains(ch)) filtered.print( ch )
       endForEach
 
-      local dates = filtered->String.replacing("* ","").split('\n')
+      local dates = filtered->String.split('\n')
 
       local years = Table<<Int32,Year>>()
       forEach (date in dates)
