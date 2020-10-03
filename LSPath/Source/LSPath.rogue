@@ -1,0 +1,83 @@
+#===============================================================================
+# LSPath.rogue
+# October 2, 2020 by Abe Pralle
+#===============================================================================
+$requireRogue "1.7.6"
+
+uses Utility/CommandLineParser
+
+LSPath( System.command_line_arguments )
+
+class LSPath
+  PROPERTIES
+    filepaths   = StringTable<<String>>()
+    show_hidden = false
+
+  METHODS
+    method init( args:String[] )
+      local command = CommandLineParser().
+      [
+        add( Option("--help").alias("-h").alias("-?") )
+        add( Option("--hidden").alias("-a") )
+        on_unknown( this=>invalid_option )
+      ].parse( args )
+
+      if (command//options//help)
+        print_usage
+      endIf
+
+      show_hidden = command//options//hidden->Logical
+
+      if (not command//args) command.ensure_list( "args" ).add( "**" )
+
+      forEach (arg in command//args.to_list<<String>>)
+        if (File.exists(arg))
+          add( arg )
+        else
+          forEach (filepath in File.listing(arg,&ignore_hidden=not show_hidden))
+
+            add( filepath )
+          endForEach
+        endIf
+      endForEach
+
+      println( forEach in filepaths )
+
+    method add( filepath:String )
+      if (not show_hidden and File.filename(filepath).begins_with('.')) return
+      filepath = File.absolute_filepath( filepath )
+      filepaths[ filepath ] = filepath
+
+    method invalid_option( parser:CommandLineParser )
+      println "=" * 80
+      println "ERROR"
+      println
+      println "Invalid option: $" (parser.arg)
+      println "=" * 80
+      print_usage( 1 )
+
+    method print_usage( exit_code=0:Int32 )
+      println @|USAGE
+               |  lspath <options> [filepath1 filepath2 ...]
+               |
+               |OPTIONS
+               |  --help, -h, -?
+               |    Print this help text.
+               |
+               |  --hidden, -a
+               |    Show all hidden files.
+               |
+               |WILDCARD PATTERNS
+               |  Put patterns in quotes to ensure that LSTree's non-standard wildcard patterns
+               |  are correctly processed. By example:
+               |    "*"            # All files in current folder
+               |    "**"           # All files, recursively
+               |    "**/*.rogue"   # All .rogue files, recursively
+               |  Finally, '?' can be used to match any single character.
+               |
+               |EXAMPLES
+               |  # Show filepaths for all .cpp, and .h files
+               |  lspath "**/*.cpp" "**/*.h"
+      System.exit( exit_code )
+endClass
+

@@ -48,6 +48,8 @@ routine rogo_android_keystore
   execute "cd Platforms/Android && rogo keystore"
 endRoutine
 
+Dependencies.check
+
 routine rogo_ios
   Build.build( "iOS" )
 endRoutine
@@ -101,6 +103,7 @@ routine rogo_xclean
 endRoutine
 
 routine rogo_version( text="Updated to":String, &silent )->String
+  if (not File.exists("PlasmacoreVersion.txt")) return "0"
   local v = String( File("PlasmacoreVersion.txt") ).trimmed
   if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
@@ -349,6 +352,7 @@ class Build [essential singleton]
             @|[REPO Plasmacore]
              |prefix=https://github.com/AbePralle
              |checkout=BRANCH
+             |fetch_full=False
              |default_actions=--init --update --ff --outdated
              |
           depz = depz.replacing( "BRANCH", BRANCH )
@@ -369,11 +373,19 @@ class Build [essential singleton]
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
       create_folder( output_folder )
 
-      launch_asset_compiler( platform )
+      local m_launch_asset_compiler = <<Global>>.find_method( "launch_asset_compiler" )
+      if (m_launch_asset_compiler)
+        # This won't be available until depz has downloaded the Plasmacore repo.
+        # Which is always has by this point, but using introspection to get things
+        # to compile in the first place.
+        m_launch_asset_compiler( Global, @[platform] )
+      else
+        throw Error( "Please re-run 'rogo $' for the Plasmacore library installation to take effect." (platform.to_lowercase) )
+      endIf
 
       if (not needs_compile(platform,output_folder)) return
 
-      local target = platform + ",C++"
+      local target = platform + ",Plasmacore,C++"
       which (platform)
         case "macOS", "iOS": target += ",ObjC"
         case "Linux":        target += ",SDL"
@@ -385,7 +397,7 @@ class Build [essential singleton]
         others:                target += ",Desktop"
       endWhich
 
-      local libs_folder = select{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
+      local libs_folder = which{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
       local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
         (ROGUEC,target,libs_folder,output_folder)
       if (Build.ide_mode)   cmd += " --ide"
@@ -439,6 +451,7 @@ class Build [essential singleton]
           @|[REPO Plasmacore]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
+           |fetch_full=False
            |default_actions=--init --update --ff --outdated
            |
         depz = depz.replacing( "BRANCH", BRANCH )
@@ -447,7 +460,7 @@ class Build [essential singleton]
       run "depz"
 
     method install_rogue
-      print select{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }
+      print which{ File.exists("Libraries/Rogue/Standard"):"Updating" || "Installing" }
       println " embedded copy of Rogue compiler."
 
       local roguec_folder = ""
@@ -813,3 +826,20 @@ routine get_description( m_name:String )->String
     return null
   endIf
 endRoutine
+
+class Dependencies [singleton]
+  METHODS
+    method check
+      require_depz
+
+    method exists( command:String )->Logical
+      return (Process.run("which "+command,&inherit_environment).success)
+
+    method require_depz
+      if (Process.run("depz -h",&inherit_environment).success) return  # already installed
+      require_pip3
+      run @|pip3 install --user git+https://github.com/MurphyMc/depz.git
+
+    method require_pip3
+      if (not exists("pip3")) throw Error( "Please install pip3 and then re-run the command." )
+endClass
