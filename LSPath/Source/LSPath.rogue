@@ -59,7 +59,11 @@ class LSPath
 
     method add( filepath:String )
       if (not show_hidden and File.filename(filepath).begins_with('.')) return
-      if (not File.matches_wildcard_pattern(filepath,forEach in names,&ignore_case)) return
+      contingent
+        necessary (names.count)
+        sufficient (File.matches_wildcard_pattern(filepath,forEach in names,&ignore_case))
+        return  # No matching name pattern
+      endContingent
       filepath = File.absolute_filepath( filepath )
       if (grep.count)
         if (File.is_folder(filepath)) return
@@ -104,10 +108,10 @@ class LSPath
                |    Show all hidden files.
                |
                |  --name=<name>, -n <name>
-               |    Only print filepaths containing the given name. Multiple names may be
-               |    specified in which case all names must be found to print a filepath.
-               |    Name comparisions are case-insensitive. Wildcard names may be used, e.g.
-               |    "ABC*.cpp".
+               |    Only print filepaths containing the given name pattern. Name comparisions
+               |    are case-insensitive. If multiple "--name" directives are given, each
+               |    filepath need only match one of the names to be printed. Wildcard names
+               |    patterns may be used, e.g. "ABC*.cpp".
                |
                |WILDCARD PATTERNS
                |  Put patterns in quotes to ensure that LSTree's non-standard wildcard patterns
