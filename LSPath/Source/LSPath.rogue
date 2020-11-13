@@ -16,7 +16,7 @@ class LSPath
     filepaths   = StringTable<<String>>()
     show_hidden = false
     grep        : String[]
-    name        : String[]
+    names       : String[]
 
   METHODS
     method init( args:String[] )
@@ -39,7 +39,11 @@ class LSPath
       if (not command//args) command.ensure_list( "args" ).add( "**" )
 
       grep = command//options//grep.to_list<<String>>
-      name = command//options//name.to_list<<String>>
+      names = command//options//name.to_list<<String>>
+
+      forEach (name in writer=names.rewriter)
+        writer.write( "**$**" (name) )
+      endForEach
 
       forEach (arg in command//args.to_list<<String>>)
         if (File.exists(arg))
@@ -55,7 +59,7 @@ class LSPath
 
     method add( filepath:String )
       if (not show_hidden and File.filename(filepath).begins_with('.')) return
-      if (not filepath.contains(forEach in name)) return
+      if (not File.matches_wildcard_pattern(filepath,forEach in names,&ignore_case)) return
       filepath = File.absolute_filepath( filepath )
       if (grep.count)
         if (File.is_folder(filepath)) return
@@ -63,7 +67,7 @@ class LSPath
           local remaining_grep = grep.cloned
           forEach (line in LineReader(File(filepath)))
             forEach (pattern at index in remaining_grep step -1)
-              if (line.contains_pattern(pattern))
+              if (line.contains_pattern(pattern,&ignore_case))
                 remaining_grep.remove_at( index )
                 sufficient (remaining_grep.is_empty)
               endIf
@@ -86,11 +90,12 @@ class LSPath
                |  --grep=<pattern>, -g <pattern>
                |    Only prints filepaths of files that contain one or more given patterns.
                |    Despite the name these are "wildcard" patterns, not classic "grep" regular
-               |    expressions. Patterns are applied line by line. Example:
-               |      lspath --grep="A*Z"
-               |    prints filepaths of all files containing a line that starts with A and ends
-               |    with Z. Specifying multiple grep patterns requires that a file contain all
-               |    patterns in order to have its filepath printed.
+               |    expressions. Patterns are applied line by line and are not case sensitive.
+               |    Example:
+               |      lspath --grep="a*z"
+               |    prints filepaths of all files containing a line that starts with 'a' and
+               |    ends with Z. Specifying multiple grep patterns requires that a file contain
+               |    all patterns in order to have its filepath printed.
                |
                |  --help, -h, -?
                |    Print this help text.
@@ -101,6 +106,8 @@ class LSPath
                |  --name=<name>, -n <name>
                |    Only print filepaths containing the given name. Multiple names may be
                |    specified in which case all names must be found to print a filepath.
+               |    Name comparisions are case-insensitive. Wildcard names may be used, e.g.
+               |    "ABC*.cpp".
                |
                |WILDCARD PATTERNS
                |  Put patterns in quotes to ensure that LSTree's non-standard wildcard patterns
