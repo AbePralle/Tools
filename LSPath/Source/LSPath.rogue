@@ -46,6 +46,7 @@ class LSPath
       endForEach
 
       forEach (arg in command//args.to_list<<String>>)
+        if (File.is_folder(arg)) arg = File.ensure_ends_with_separator( arg ) + "**"
         if (File.exists(arg))
           add( arg )
         else
