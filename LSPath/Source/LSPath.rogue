@@ -4,8 +4,8 @@
 #===============================================================================
 $requireRogue "1.7.8"
 
-$define VERSION "1.4"
-$define DATE    "November 21, 2020 by Abe Pralle"
+$define VERSION "1.5"
+$define DATE    "June 26, 2021 by Abe Pralle"
 
 uses Utility/CommandLineParser
 
@@ -22,6 +22,7 @@ class LSPath
     method init( args:String[] )
       local command = CommandLineParser().
       [
+        option( "--esc",    &alias="-e" )
         option( "--grep=",  &alias="-g", &multi )
         option( "--help",   &aliases=["-h","-?"] )
         option( "--hidden", &alias="-a" )
@@ -56,7 +57,11 @@ class LSPath
         endIf
       endForEach
 
-      println( forEach in filepaths )
+      if (command//options//esc)
+        println( File.esc(forEach in filepaths) )
+      else
+        println( forEach in filepaths )
+      endIf
 
     method add( filepath:String )
       if (not show_hidden and File.filename(filepath).begins_with('.')) return
@@ -92,6 +97,10 @@ class LSPath
                |  lspath <options> [filepath1 filepath2 ...]
                |
                |OPTIONS
+               |  --esc, -e
+               |    Paths are displayed with spaces and most other symbols escaped. For example
+               |    a filepath containing "abc 123" would display as "abc\ 123".
+               |
                |  --grep=<pattern>, -g <pattern>
                |    Only prints filepaths of files that contain one or more given patterns.
                |    Despite the name these are "wildcard" patterns, not classic "grep" regular
