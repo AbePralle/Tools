@@ -22,11 +22,12 @@ class LSPath
     method init( args:String[] )
       local command = CommandLineParser().
       [
-        option( "--esc",    &alias="-e" )
-        option( "--grep=",  &alias="-g", &multi )
-        option( "--help",   &aliases=["-h","-?"] )
-        option( "--hidden", &alias="-a" )
-        option( "--name=",  &alias="-n", &multi )
+        option( "--command=", &alias="-c" )
+        option( "--esc",      &alias="-e" )
+        option( "--grep=",    &alias="-g", &multi )
+        option( "--help",     &aliases=["-h","-?"] )
+        option( "--hidden",   &alias="-a" )
+        option( "--name=",    &alias="-n", &multi )
         on_unknown( this=>print_usage )
       ].parse( args )
 
@@ -57,11 +58,29 @@ class LSPath
         endIf
       endForEach
 
-      if (command//options//esc)
-        println( File.esc(forEach in filepaths) )
-      else
-        println( forEach in filepaths )
-      endIf
+      block filepaths = filepaths.values.to_list
+
+        if (command//options//esc)
+          filepaths .= map<<String>>( (f) => File.esc(f) )
+        endIf
+
+        if (command//options//command)
+          local command_line = command//options//command->String
+          if (command_line.contains("$$"))
+            local cmd = command_line.replacing("$$",filepaths.join(' '))
+            println "> " + cmd
+            System.run( cmd )
+          else
+            forEach (filepath in filepaths)
+              local cmd = command_line.replacing("$",filepath)
+              println "> " + cmd
+              System.run( cmd )
+            endForEach
+          endIf
+        else
+          println( forEach in filepaths )
+        endIf
+      endBlock
 
     method add( filepath:String )
       if (not show_hidden and File.filename(filepath).begins_with('.')) return
@@ -97,6 +116,20 @@ class LSPath
                |  lspath <options> [filepath1 filepath2 ...]
                |
                |OPTIONS
+               |  --command=<command-line>, -c <command-line>
+               |    Invokes a system() call instead of printing result filepaths. The command
+               |    can contain one of two kinds of placeholder marker:
+               |
+               |    $  - Command is invoked N times for N result filepaths, with a different
+               |         filepath substituted each time.
+               |    $$ - Command is invoked once and $$ is replaced by a space-separated list
+               |         of every filepath.
+               |
+               |    Use single quotes to prevent '$' being escaped by the shell. Examples:
+               |
+               |      lspath "**/*.rogue" --command='ls -l "$"'  # Long listing of each filepath
+               |      lspath "**/*.rogue" -e -c 'wc -l $$'       # Word count of all filepaths,
+               |                                                 # escaping spaces.
                |  --esc, -e
                |    Paths are displayed with spaces and most other symbols escaped. For example
                |    a filepath containing "abc 123" would display as "abc\ 123".
